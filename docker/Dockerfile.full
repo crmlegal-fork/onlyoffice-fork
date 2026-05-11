@@ -1,0 +1,90 @@
+# syntax=docker/dockerfile:1.6
+#
+# OnlyOffice DocumentServer Fork — multi-stage build
+#
+# Stage builder: instala dependencias npm del server (Node.js puro).
+#   - SpellChecker omitido: `hunspell` falla con node-gyp en Node 20.
+# Stage runtime: imagen oficial 9.3.1.2 + nuestros sources/node_modules parcheados.
+#   - Solo reemplaza sources/ y node_modules/ de cada subdirectorio del server.
+#   - Preserva config/, schema/, FileConverter/bin/, tools/ (binarios C++ de la imagen).
+
+# =============================================================================
+# Stage 1: builder
+# =============================================================================
+FROM node:20-bullseye AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      python3 git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+COPY server/ ./server/
+
+# --ignore-scripts en el top-level evita ejecutar hooks de husky/lint-staged
+WORKDIR /build/server
+RUN npm install --no-audit --no-fund --legacy-peer-deps --ignore-scripts
+
+WORKDIR /build/server/Common
+RUN npm install --no-audit --no-fund --legacy-peer-deps
+
+WORKDIR /build/server/DocService
+RUN npm install --no-audit --no-fund --legacy-peer-deps
+
+WORKDIR /build/server/FileConverter
+RUN npm install --no-audit --no-fund --legacy-peer-deps
+
+WORKDIR /build/server/Metrics
+RUN npm install --no-audit --no-fund --legacy-peer-deps
+
+# =============================================================================
+# Stage 2: runtime
+# =============================================================================
+FROM onlyoffice/documentserver:9.3.1.2
+
+ARG COMPANY_NAME=onlyoffice
+ENV COMPANY_NAME=${COMPANY_NAME}
+
+# Eliminar las versiones originales de sources/ y node_modules/ de cada módulo.
+# NO tocamos config/, schema/, FileConverter/bin/ ni tools/ (binarios C++).
+RUN rm -rf /var/www/${COMPANY_NAME}/documentserver/server/Common/sources \
+           /var/www/${COMPANY_NAME}/documentserver/server/Common/node_modules \
+           /var/www/${COMPANY_NAME}/documentserver/server/DocService/sources \
+           /var/www/${COMPANY_NAME}/documentserver/server/DocService/node_modules \
+           /var/www/${COMPANY_NAME}/documentserver/server/FileConverter/sources \
+           /var/www/${COMPANY_NAME}/documentserver/server/FileConverter/node_modules \
+           /var/www/${COMPANY_NAME}/documentserver/server/Metrics/node_modules
+
+# Copiar con --chown durante el COPY (evita un RUN chown -R lento posterior)
+COPY --from=builder --chown=ds:ds /build/server/Common/sources         \
+     /var/www/onlyoffice/documentserver/server/Common/sources
+COPY --from=builder --chown=ds:ds /build/server/Common/node_modules    \
+     /var/www/onlyoffice/documentserver/server/Common/node_modules
+COPY --from=builder --chown=ds:ds /build/server/DocService/sources     \
+     /var/www/onlyoffice/documentserver/server/DocService/sources
+COPY --from=builder --chown=ds:ds /build/server/DocService/node_modules \
+     /var/www/onlyoffice/documentserver/server/DocService/node_modules
+COPY --from=builder --chown=ds:ds /build/server/FileConverter/sources  \
+     /var/www/onlyoffice/documentserver/server/FileConverter/sources
+COPY --from=builder --chown=ds:ds /build/server/FileConverter/node_modules \
+     /var/www/onlyoffice/documentserver/server/FileConverter/node_modules
+COPY --from=builder --chown=ds:ds /build/server/Metrics                \
+     /var/www/onlyoffice/documentserver/server/Metrics
+
+# ===== Branding: sustituir logos/strings ONLYOFFICE por Embitech =====
+COPY docker/branding/ /tmp/branding/
+RUN sed -i 's/\r$//' /tmp/branding/apply-branding.sh \
+ && chmod +x /tmp/branding/apply-branding.sh \
+ && /tmp/branding/apply-branding.sh \
+ && rm -rf /tmp/branding
+
+# Smoke test del parche en build-time: si falla, el build entero falla.
+# grep está siempre disponible (node no está en PATH en la imagen oficial).
+RUN grep -E "^exports\.LICENSE_CONNECTIONS\s*=\s*100;" /var/www/${COMPANY_NAME}/documentserver/server/Common/sources/constants.js \
+ && grep -E "^exports\.LICENSE_USERS\s*=\s*100;"       /var/www/${COMPANY_NAME}/documentserver/server/Common/sources/constants.js \
+ && grep -qi "embitech" /var/www/${COMPANY_NAME}/documentserver/web-apps/apps/common/main/resources/img/header/header-logo_s.svg \
+ && echo "OK: parche LICENSE_CONNECTIONS=100, LICENSE_USERS=100 + branding Embitech verificados"
+
+# Healthcheck y entrypoint heredados de la imagen oficial:
+#   ENTRYPOINT ["/app/ds/run-document-server.sh"]
+#   EXPOSE 80 443

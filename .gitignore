@@ -1,0 +1,39 @@
+# Secretos / configuración local
+docker/.env.local
+docker/.env*.local
+*.env
+
+# Logs
+*.log
+.clone-*.log
+
+# Node
+**/node_modules/
+**/npm-debug.log*
+
+# Build outputs
+**/build/out/
+**/build/server/
+**/Gruntfile.js.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Repos clonados (vendoreados — gestionados por scripts/clone-all.ps1)
+# Comentar si quieres versionarlos en este wrapper
+DocumentServer/
+core/
+core-fonts/
+dictionaries/
+document-templates/
+sdkjs/
+web-apps/
+build_tools/
+Docker-DocumentServer/
+# server/ NO está en gitignore: el fork del backend con el parche se commitea

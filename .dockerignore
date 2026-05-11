@@ -1,0 +1,32 @@
+# .dockerignore en la raíz del contexto (referenciado por docker buildx build con `.`)
+# Solo necesitamos server/ — todo lo demás se excluye para que el contexto sea pequeño.
+
+# Excluir TODO por defecto
+**
+
+# Re-incluir el server (sources) y los assets de branding
+!server/**
+!docker/**
+!docker/branding/**
+
+# Dentro de server/, excluir lo no esencial
+server/node_modules
+server/**/node_modules
+server/.git
+server/.github
+server/.husky
+server/build
+server/tests
+server/*.log
+server/npm-debug.log*
+server/.editorconfig
+server/.prettierrc
+server/.prettierignore
+server/.travis.yml
+server/eslint.config.js
+server/.lintstagedrc.js
+server/Gruntfile.js.out
+
+# Docker
+docker/.env*
+docker/Dockerfile*~

@@ -1,0 +1,18 @@
+# Excluir contenido del contexto que no se usa en el build
+**/node_modules
+**/.git
+**/build/out
+**/Debug
+**/Release
+**/*.log
+docker/.env*
+examples/
+patches/
+scripts/
+DocumentServer/
+Docker-DocumentServer/
+build_tools/
+.clone-*.log
+*.md
+.editorconfig
+.husky/

@@ -1,0 +1,38 @@
+# docker-compose.prod.yml — Despliegue en EC2
+#
+# Diferencias respecto al docker-compose.yml local:
+#   - Bind mounts a /srv/onlyoffice/* (EBS) en lugar de docker volumes
+#   - NO expone el puerto 80 al host directamente — el Nginx host-side lo hará
+#     vía 127.0.0.1:8080 (loopback only, evita exponer HTTP directo a internet)
+#   - Variables sensibles desde .env.prod (no commitear)
+#   - Restart policy más estricta
+
+services:
+  documentserver:
+    image: onlyoffice-fork:local
+    container_name: onlyoffice-ds
+    restart: always
+    ports:
+      - "127.0.0.1:8080:80"     # Solo accesible desde el host (Nginx hará proxy)
+    environment:
+      JWT_ENABLED: "true"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_HEADER: "AuthorizationJwt"
+      JWT_IN_BODY: "true"
+      USE_UNAUTHORIZED_STORAGE: "false"
+    volumes:
+      - /srv/onlyoffice/data:/var/www/onlyoffice/Data
+      - /srv/onlyoffice/log:/var/log/onlyoffice
+      - /srv/onlyoffice/lib:/var/lib/onlyoffice
+      - /srv/onlyoffice/db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost/healthcheck || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

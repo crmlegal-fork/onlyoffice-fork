@@ -1,0 +1,33 @@
+services:
+  documentserver:
+    image: onlyoffice-fork:local
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.full
+    container_name: onlyoffice-ds
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      JWT_ENABLED: "true"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_HEADER: "AuthorizationJwt"
+      JWT_IN_BODY: "true"
+      USE_UNAUTHORIZED_STORAGE: "false"
+    volumes:
+      - ds_data:/var/www/onlyoffice/Data
+      - ds_log:/var/log/onlyoffice
+      - ds_lib:/var/lib/onlyoffice
+      - ds_db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost/healthcheck || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
+volumes:
+  ds_data: {}
+  ds_log:  {}
+  ds_lib:  {}
+  ds_db:   {}

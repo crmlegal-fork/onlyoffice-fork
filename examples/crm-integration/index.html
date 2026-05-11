@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>OnlyOffice fork — CRM integration demo</title>
+  <style>
+    html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
+    header { padding: 8px 16px; background: #2c3e50; color: #fff; display: flex; gap: 12px; align-items: center; }
+    header h1 { margin: 0; font-size: 14px; font-weight: 500; }
+    header .info { font-size: 12px; opacity: 0.7; }
+    #placeholder { width: 100%; height: calc(100% - 40px); }
+    .error { padding: 24px; color: #c0392b; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>OnlyOffice Fork — Demo CRM</h1>
+    <span class="info" id="info">cargando…</span>
+  </header>
+  <div id="placeholder"></div>
+
+  <script>
+    const DS_BASE  = "http://localhost";          // DocumentServer (Docker en local)
+    const CRM_BASE = "http://host.docker.internal:3000";  // Express stub: file source + callback
+
+    // 1) Pedimos al stub un config firmado con JWT (el secreto vive en el server)
+    fetch(CRM_BASE.replace("host.docker.internal", "localhost") + "/onlyoffice/config?file=sample.docx")
+      .then(r => r.json())
+      .then(cfg => {
+        document.getElementById("info").textContent = "doc=" + cfg.document.title + " key=" + cfg.document.key.slice(0, 8);
+        // 2) Inyectamos el script del DocsAPI dinámicamente
+        const s = document.createElement("script");
+        s.src = DS_BASE + "/web-apps/apps/api/documents/api.js";
+        s.onload = () => new DocsAPI.DocEditor("placeholder", cfg);
+        s.onerror = () => fail("No se pudo cargar " + s.src + ". ¿Está el contenedor arriba?");
+        document.head.appendChild(s);
+      })
+      .catch(err => fail("Stub Express no responde: " + err.message + "\nLevántalo con: npm start en examples/crm-integration"));
+
+    function fail(msg) {
+      document.getElementById("placeholder").innerHTML = '<div class="error">' + msg + '</div>';
+    }
+  </script>
+</body>
+</html>

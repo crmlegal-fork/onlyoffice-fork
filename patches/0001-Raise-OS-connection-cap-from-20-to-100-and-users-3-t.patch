@@ -1,0 +1,27 @@
+From ebb66b6018e825f33ce290a937bd05edb7385417 Mon Sep 17 00:00:00 2001
+From: OnlyOffice Fork <fork@local>
+Date: Sun, 10 May 2026 18:27:18 +0200
+Subject: [PATCH] Raise OS connection cap from 20 to 100 (and users 3 to 100)
+
+---
+ Common/sources/constants.js | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Common/sources/constants.js b/Common/sources/constants.js
+index 639f6c8d..c6eeb274 100644
+--- a/Common/sources/constants.js
++++ b/Common/sources/constants.js
+@@ -88,8 +88,8 @@ exports.LICENSE_RESULT = {
+   NotBefore: 16
+ };
+ 
+-exports.LICENSE_CONNECTIONS = 20;
+-exports.LICENSE_USERS = 3;
++exports.LICENSE_CONNECTIONS = 100;
++exports.LICENSE_USERS = 100;
+ exports.LICENSE_EXPIRE_USERS_ONE_DAY = 24 * 60 * 60; // day in seconds
+ 
+ exports.AVS_OFFICESTUDIO_FILE_UNKNOWN = 0x0000;
+-- 
+2.54.0.windows.1
+

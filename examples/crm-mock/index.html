@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ALETHEIA Abogados — Editar Plantilla</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- ============== SIDEBAR ============== -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">🏛</div>
+        <div class="brand-text">
+          <div class="brand-name">ALETHEIA</div>
+          <div class="brand-sub">Abogados</div>
+        </div>
+        <button class="brand-collapse" title="Colapsar">⟨</button>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-section">General</div>
+        <a class="nav-item" href="#"><span class="nav-icon">▣</span> Panel</a>
+        <a class="nav-item" href="#"><span class="nav-icon">📋</span> Leads</a>
+
+        <div class="nav-section">Clientes</div>
+        <a class="nav-item" href="#"><span class="nav-icon">✓</span> Tareas</a>
+        <a class="nav-item nav-item--expandable" href="#">
+          <span class="nav-icon">📁</span> Expedientes <span class="nav-chevron">›</span>
+        </a>
+
+        <div class="nav-section">Contabilidad</div>
+        <a class="nav-item" href="#"><span class="nav-icon">📊</span> Resumen</a>
+        <a class="nav-item" href="#"><span class="nav-icon">💳</span> Pagos por Cliente</a>
+        <a class="nav-item" href="#"><span class="nav-icon">📅</span> Cuotas del Mes</a>
+
+        <div class="nav-section">Gestión del Despacho</div>
+        <a class="nav-item nav-item--expandable" href="#">
+          <span class="nav-icon">⚙</span> Administracion <span class="nav-chevron">›</span>
+        </a>
+        <a class="nav-item nav-item--active nav-item--expandable" href="#">
+          <span class="nav-icon">📄</span> Plantillas <span class="nav-chevron">›</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a class="nav-item" href="#"><span class="nav-icon">⚙</span> Admin</a>
+      </div>
+    </aside>
+
+    <!-- ============== MAIN ============== -->
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-titles">
+          <h1>Editar Plantilla</h1>
+          <p>Modificar plantilla de documento</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" title="Notificaciones">🔔<span class="dot"></span></button>
+          <div class="user">
+            <div class="user-avatar">⬢</div>
+            <div class="user-name">ignasi Saura</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="page-toolbar">
+        <button class="back-btn" onclick="history.back()">←</button>
+        <h2 class="doc-title" id="doc-title">Hoja de Encargo</h2>
+        <button class="icon-btn icon-btn--inline" title="Renombrar">✏</button>
+      </div>
+
+      <div class="editor-wrap">
+        <div class="editor" id="editor"></div>
+        <aside class="vars-panel" id="vars-panel">
+          <header class="vars-header">
+            <span class="vars-title">Insertar variable</span>
+            <button class="icon-btn icon-btn--inline" title="Anclar">⇲</button>
+            <button class="icon-btn icon-btn--inline" id="vars-close" title="Cerrar">×</button>
+          </header>
+          <div class="vars-body">
+            <div class="vars-label">Insertar variable</div>
+            <div class="vars-search">
+              <input type="text" id="vars-search" placeholder="🔍 Buscar variable..." />
+            </div>
+            <div class="vars-group" id="vars-group-cliente">
+              <header class="vars-group-header">
+                <span class="vars-group-icon">👤</span>
+                <span class="vars-group-name">Cliente</span>
+                <span class="vars-group-count">14</span>
+                <span class="vars-group-chevron">⌄</span>
+              </header>
+              <ul class="vars-list">
+                <li data-token="{{cliente.nombre_completo}}"><span>Nombre completo</span><code>{{cliente.n...</code></li>
+                <li data-token="{{cliente.nombre_pila}}"><span>Nombre</span><code>{{cliente.nombre_pila...</code></li>
+                <li data-token="{{cliente.apellidos}}"><span>Apellidos</span><code>{{cliente.apellidos}}</code></li>
+                <li data-token="{{cliente.dni}}"><span>DNI / NIE</span><code>{{cliente.dni}}</code></li>
+                <li data-token="{{cliente.direccion}}"><span>Direccion</span><code>{{cliente.direccion...</code></li>
+                <li data-token="{{cliente.cp}}"><span>Codigo postal</span><code>{{cliente.cp}}</code></li>
+                <li data-token="{{cliente.ciudad}}"><span>Ciudad</span><code>{{cliente.ciudad}}</code></li>
+                <li data-token="{{cliente.provincia}}"><span>Provincia</span><code>{{cliente.provincia...</code></li>
+                <li data-token="{{cliente.telefono}}"><span>Telefono</span><code>{{cliente.telefono}}</code></li>
+                <li data-token="{{cliente.email}}"><span>Email</span><code>{{cliente.email}}</code></li>
+                <li data-token="{{cliente.nacionalidad}}"><span>Nacionalidad</span><code>{{cliente.nacionalidad}}</code></li>
+                <li data-token="{{cliente.fecha_nacimiento}}"><span>Fecha nacimiento</span><code>{{cliente.fecha_n...</code></li>
+                <li data-token="{{cliente.estado_civil}}"><span>Estado civil</span><code>{{cliente.estado_civil}}</code></li>
+                <li data-token="{{cliente.profesion}}"><span>Profesion</span><code>{{cliente.profesion}}</code></li>
+              </ul>
+            </div>
+            <div class="vars-group vars-group--collapsed">
+              <header class="vars-group-header">
+                <span class="vars-group-icon">📁</span>
+                <span class="vars-group-name">Expediente</span>
+                <span class="vars-group-count">8</span>
+                <span class="vars-group-chevron">›</span>
+              </header>
+            </div>
+            <div class="vars-group vars-group--collapsed">
+              <header class="vars-group-header">
+                <span class="vars-group-icon">🏛</span>
+                <span class="vars-group-name">Despacho</span>
+                <span class="vars-group-count">6</span>
+                <span class="vars-group-chevron">›</span>
+              </header>
+            </div>
+          </div>
+        </aside>
+      </div>
+      <footer class="legal-footer">
+        Editor powered by <a href="https://www.onlyoffice.com" target="_blank" rel="noopener">ONLYOFFICE®</a> —
+        modificaciones bajo <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">AGPL v3</a> —
+        <a href="/source" target="_blank" rel="noopener">código fuente</a>
+      </footer>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
