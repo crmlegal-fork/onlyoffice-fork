@@ -25,6 +25,9 @@ docker/.env*.local
 Thumbs.db
 .DS_Store
 
+# Config local de herramientas de desarrollo
+.claude/
+
 # Meta-repo DocumentServer no se versiona (solo referencia)
 DocumentServer/
 # El resto de repos OnlyOffice se gestionan como GIT SUBMODULES (ver .gitmodules)
