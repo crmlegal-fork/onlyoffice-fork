@@ -97,4 +97,14 @@ if [ -f "$PLUGIN_LIST" ]; then
   gzip -kf "$PLUGIN_LIST"
 fi
 
+# --- 7. Deshabilitar el servicio "example" (editor demo público) ---
+# Eliminamos el conf de supervisor y la referencia en el grupo ds.
+# El binario y los assets siguen en la imagen pero no se arrancan ni listan.
+rm -f /etc/supervisor/conf.d/ds-example.conf
+DS_CONF=/etc/supervisor/conf.d/ds.conf
+if [ -f "$DS_CONF" ]; then
+  # Quita "example" de la lista programs=... (con o sin coma adyacente)
+  sed -i -E 's/,example//; s/example,//; s/programs=example$/programs=/' "$DS_CONF"
+fi
+
 echo "Branding aplicado."
