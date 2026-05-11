@@ -10,7 +10,6 @@ const DS_BASE = "http://localhost";  // DocumentServer (Docker en :80)
 let editor = null;
 
 bootEditor();
-wireVariablesPanel();
 
 async function bootEditor() {
   try {
@@ -52,48 +51,3 @@ function showError(msg) {
   el.innerHTML = `<div class="editor-error">${msg}</div>`;
 }
 
-// =============== Panel de variables ===============
-function wireVariablesPanel() {
-  // Toggle grupos
-  document.querySelectorAll(".vars-group-header").forEach((h) => {
-    h.addEventListener("click", () => h.parentElement.classList.toggle("vars-group--collapsed"));
-  });
-
-  // Click en variable → insertar en el cursor
-  document.querySelectorAll(".vars-list li").forEach((li) => {
-    li.addEventListener("click", () => insertToken(li.dataset.token));
-  });
-
-  // Búsqueda
-  const search = document.getElementById("vars-search");
-  search.addEventListener("input", () => {
-    const q = search.value.trim().toLowerCase();
-    document.querySelectorAll(".vars-list li").forEach((li) => {
-      const t = li.textContent.toLowerCase();
-      li.style.display = !q || t.includes(q) ? "" : "none";
-    });
-  });
-
-  // Botón cerrar panel
-  document.getElementById("vars-close").addEventListener("click", () => {
-    document.getElementById("vars-panel").style.display = "none";
-  });
-}
-
-function insertToken(token) {
-  if (!editor) {
-    console.warn("editor no listo aún");
-    return;
-  }
-  // Usar el connector de la Document Builder API para insertar texto en el cursor
-  const connector = editor.createConnector();
-  connector.callCommand(function () {
-    const oDocument = Api.GetDocument();
-    const oRange = oDocument.GetRangeBySelect();
-    if (oRange) {
-      oRange.AddText(arguments[0]);
-    } else {
-      oDocument.InsertContent([Api.CreateRun().AddText(arguments[0])]);
-    }
-  }, false, false, [token]);
-}
