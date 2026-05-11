@@ -13,15 +13,15 @@
 #   9. verificar end-to-end
 #
 # Uso (en la EC2, desde la raíz del fork descomprimido):
-#   sudo bash scripts/deploy-everything.sh docs.embitech.es admin@embitech.es
+#   sudo bash scripts/deploy-everything.sh editor.embitech.cloud admin@embitech.es
 #
 # Argumentos:
-#   $1 = dominio (default: docs.embitech.es)
+#   $1 = dominio (default: editor.embitech.cloud)
 #   $2 = email para Let's Encrypt (default: admin@embitech.es)
 
 set -euo pipefail
 
-DOMAIN="${1:-docs.embitech.es}"
+DOMAIN="${1:-editor.embitech.cloud}"
 EMAIL="${2:-admin@embitech.es}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 USER_NAME="${SUDO_USER:-$USER}"
@@ -121,8 +121,15 @@ docker buildx build --load -f docker/Dockerfile.full -t onlyoffice-fork:local .
 ENV_FILE="$ROOT/docker/.env.prod"
 if [ ! -f "$ENV_FILE" ]; then
     echo ""
-    echo "==> [7a/9] Generando .env.prod con JWT_SECRET aleatorio..."
-    JWT_SECRET=$(openssl rand -hex 48)
+    echo "==> [7a/9] Generando .env.prod..."
+    # Si JWT_SECRET viene en el entorno (ej. lo pasaste como `JWT_SECRET=... bash deploy-everything.sh ...`),
+    # se respeta. Si no, se genera uno aleatorio.
+    if [ -z "${JWT_SECRET:-}" ]; then
+        JWT_SECRET=$(openssl rand -hex 48)
+        echo "    JWT_SECRET aleatorio generado."
+    else
+        echo "    JWT_SECRET tomado del entorno (CRM ya lo conoce)."
+    fi
     echo "JWT_SECRET=$JWT_SECRET" > "$ENV_FILE"
     chmod 600 "$ENV_FILE"
 fi

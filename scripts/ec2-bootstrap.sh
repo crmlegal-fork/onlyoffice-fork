@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-DOMAIN="${1:-docs.embitech.es}"
+DOMAIN="${1:-editor.embitech.cloud}"
 
 echo "==> Update apt"
 sudo apt-get update

@@ -1,6 +1,6 @@
 # Despliegue en EC2
 
-Guía paso a paso para subir el fork de OnlyOffice a tu EC2 con dominio `docs.embitech.es` + SSL.
+Guía paso a paso para subir el fork de OnlyOffice a tu EC2 con dominio `editor.embitech.cloud` + SSL.
 
 ## Estado de partida (asumido)
 
@@ -22,9 +22,9 @@ Guía paso a paso para subir el fork de OnlyOffice a tu EC2 con dominio `docs.em
 
 En tu proveedor de DNS (Route53, Cloudflare, etc.):
 ```
-docs.embitech.es   A   <IP_PUBLICA_EC2>   TTL 300
+editor.embitech.cloud   A   <IP_PUBLICA_EC2>   TTL 300
 ```
-Verifica con: `dig docs.embitech.es +short` (debe devolver tu IP EC2).
+Verifica con: `dig editor.embitech.cloud +short` (debe devolver tu IP EC2).
 
 ## Paso 1 — Hacer llegar el código a la EC2
 
@@ -55,7 +55,7 @@ tar -xzf ~/onlyoffice-fork.tar.gz
 ```bash
 # En la EC2, dentro de ~/onlyoffice-fork/
 chmod +x scripts/ec2-bootstrap.sh
-./scripts/ec2-bootstrap.sh docs.embitech.es
+./scripts/ec2-bootstrap.sh editor.embitech.cloud
 ```
 
 Esto instala: docker + buildx + compose, nginx, certbot, ufw, y crea `/srv/onlyoffice/{data,log,lib,db}` con perms correctos.
@@ -97,7 +97,7 @@ sudo mkdir -p /var/www/certbot
 # Edita temporalmente el bloque 443 para comentarlo o usa el comando standalone:
 
 # Emitir cert con Let's Encrypt (modo nginx; certbot inyecta config temporal)
-sudo certbot --nginx -d docs.embitech.es \
+sudo certbot --nginx -d editor.embitech.cloud \
     --non-interactive --agree-tos \
     -m tu-email@embitech.es
 
@@ -109,19 +109,19 @@ sudo systemctl reload nginx
 
 Verificar:
 ```bash
-curl -fsS https://docs.embitech.es/healthcheck   # → true
-curl -I https://docs.embitech.es/web-apps/apps/api/documents/api.js   # → HTTP/2 200
+curl -fsS https://editor.embitech.cloud/healthcheck   # → true
+curl -I https://editor.embitech.cloud/web-apps/apps/api/documents/api.js   # → HTTP/2 200
 ```
 
 ## Paso 5 — Actualizar el CRM/stub
 
 En tu CRM (o en el stub `examples/crm-mock/`) cambiar:
 ```env
-PUBLIC_HOST=docs.embitech.es        # antes: host.docker.internal:3000
+PUBLIC_HOST=editor.embitech.cloud        # antes: host.docker.internal:3000
 ```
 Y los URLs del DocsAPI deben apuntar a:
 ```js
-const DS_BASE = "https://docs.embitech.es";
+const DS_BASE = "https://editor.embitech.cloud";
 ```
 
 El `callbackUrl` y `document.url` del config deben usar URLs **públicas** y **HTTPS** accesibles desde la EC2.
