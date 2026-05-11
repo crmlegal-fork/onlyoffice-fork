@@ -13,18 +13,26 @@ services:
     container_name: onlyoffice-ds
     restart: always
     ports:
-      - "127.0.0.1:8080:80"     # Solo accesible desde el host (Nginx hará proxy)
+      - "127.0.0.1:8080:80"     # Solo accesible desde el host (Nginx hace proxy)
     environment:
       JWT_ENABLED: "true"
       JWT_SECRET: "${JWT_SECRET}"
-      JWT_HEADER: "AuthorizationJwt"
+      # IMPORTANTE: header debe coincidir con el que firma el CRM. Producción
+      # actual usa "Authorization" (NO el default oficial "AuthorizationJwt").
+      JWT_HEADER: "${JWT_HEADER:-Authorization}"
       JWT_IN_BODY: "true"
       USE_UNAUTHORIZED_STORAGE: "false"
     volumes:
-      - /srv/onlyoffice/data:/var/www/onlyoffice/Data
-      - /srv/onlyoffice/log:/var/log/onlyoffice
-      - /srv/onlyoffice/lib:/var/lib/onlyoffice
-      - /srv/onlyoffice/db:/var/lib/postgresql
+      # Bind mounts heredados del deploy previo (preserva BD + datos).
+      # Override con env DATA_ROOT si quieres cambiar la ruta.
+      - ${DATA_ROOT:-/home/ssm-user/onlyoffice}/data:/var/www/onlyoffice/Data
+      - ${DATA_ROOT:-/home/ssm-user/onlyoffice}/logs:/var/log/onlyoffice
+      - ${DATA_ROOT:-/home/ssm-user/onlyoffice}/lib:/var/lib/onlyoffice
+      - ${DATA_ROOT:-/home/ssm-user/onlyoffice}/db:/var/lib/postgresql
+      # Volumes para servicios stateless (RabbitMQ, Redis, fuentes).
+      - ds_rabbitmq:/var/lib/rabbitmq
+      - ds_redis:/var/lib/redis
+      - ds_fonts:/usr/share/fonts/truetype/custom
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost/healthcheck || exit 1"]
       interval: 30s
@@ -36,3 +44,8 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+
+volumes:
+  ds_rabbitmq: {}
+  ds_redis:    {}
+  ds_fonts:    {}
