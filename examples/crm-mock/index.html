@@ -3,84 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ALETHEIA Abogados — Editar Plantilla</title>
+  <title>Embitech Editor</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app">
-    <!-- ============== SIDEBAR ============== -->
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-icon">🏛</div>
-        <div class="brand-text">
-          <div class="brand-name">ALETHEIA</div>
-          <div class="brand-sub">Abogados</div>
-        </div>
-        <button class="brand-collapse" title="Colapsar">⟨</button>
-      </div>
-
-      <nav class="nav">
-        <div class="nav-section">General</div>
-        <a class="nav-item" href="#"><span class="nav-icon">▣</span> Panel</a>
-        <a class="nav-item" href="#"><span class="nav-icon">📋</span> Leads</a>
-
-        <div class="nav-section">Clientes</div>
-        <a class="nav-item" href="#"><span class="nav-icon">✓</span> Tareas</a>
-        <a class="nav-item nav-item--expandable" href="#">
-          <span class="nav-icon">📁</span> Expedientes <span class="nav-chevron">›</span>
-        </a>
-
-        <div class="nav-section">Contabilidad</div>
-        <a class="nav-item" href="#"><span class="nav-icon">📊</span> Resumen</a>
-        <a class="nav-item" href="#"><span class="nav-icon">💳</span> Pagos por Cliente</a>
-        <a class="nav-item" href="#"><span class="nav-icon">📅</span> Cuotas del Mes</a>
-
-        <div class="nav-section">Gestión del Despacho</div>
-        <a class="nav-item nav-item--expandable" href="#">
-          <span class="nav-icon">⚙</span> Administracion <span class="nav-chevron">›</span>
-        </a>
-        <a class="nav-item nav-item--active nav-item--expandable" href="#">
-          <span class="nav-icon">📄</span> Plantillas <span class="nav-chevron">›</span>
-        </a>
-      </nav>
-
-      <div class="sidebar-footer">
-        <a class="nav-item" href="#"><span class="nav-icon">⚙</span> Admin</a>
-      </div>
-    </aside>
-
-    <!-- ============== MAIN ============== -->
-    <main class="main">
-      <header class="topbar">
-        <div class="topbar-titles">
-          <h1>Editar Plantilla</h1>
-          <p>Modificar plantilla de documento</p>
-        </div>
-        <div class="topbar-actions">
-          <button class="icon-btn" title="Notificaciones">🔔<span class="dot"></span></button>
-          <div class="user">
-            <div class="user-avatar">⬢</div>
-            <div class="user-name">ignasi Saura</div>
-          </div>
-        </div>
-      </header>
-
-      <div class="page-toolbar">
-        <button class="back-btn" onclick="history.back()">←</button>
-        <h2 class="doc-title" id="doc-title">Hoja de Encargo</h2>
-        <button class="icon-btn icon-btn--inline" title="Renombrar">✏</button>
-      </div>
-
-      <div class="editor-wrap">
-        <div class="editor" id="editor"></div>
-      </div>
-      <footer class="legal-footer">
-        Editor powered by <a href="https://www.onlyoffice.com" target="_blank" rel="noopener">ONLYOFFICE®</a> —
-        modificaciones bajo <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">AGPL v3</a> —
-        <a href="/source" target="_blank" rel="noopener">código fuente</a>
-      </footer>
-    </main>
-  </div>
+  <div id="editor"></div>
+  <footer class="legal-footer">
+    Editor powered by <a href="https://www.onlyoffice.com" target="_blank" rel="noopener">ONLYOFFICE®</a> —
+    modificaciones bajo <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">AGPL v3</a> —
+    <a href="/source" target="_blank" rel="noopener">código fuente</a>
+  </footer>
 
   <script src="app.js"></script>
 </body>

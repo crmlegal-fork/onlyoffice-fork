@@ -14,7 +14,7 @@ bootEditor();
 async function bootEditor() {
   try {
     const cfg = await fetchConfig("sample.docx");
-    document.getElementById("doc-title").textContent = cfg.document.title;
+    document.title = cfg.document.title + " — Embitech Editor";
     await loadScript(`${DS_BASE}/web-apps/apps/api/documents/api.js`);
     editor = new DocsAPI.DocEditor("editor", {
       ...cfg,
