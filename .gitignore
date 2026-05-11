@@ -25,15 +25,7 @@ docker/.env*.local
 Thumbs.db
 .DS_Store
 
-# Repos clonados (vendoreados — gestionados por scripts/clone-all.ps1)
-# Comentar si quieres versionarlos en este wrapper
+# Meta-repo DocumentServer no se versiona (solo referencia)
 DocumentServer/
-core/
-core-fonts/
-dictionaries/
-document-templates/
-sdkjs/
-web-apps/
-build_tools/
-Docker-DocumentServer/
-# server/ NO está en gitignore: el fork del backend con el parche se commitea
+# El resto de repos OnlyOffice se gestionan como GIT SUBMODULES (ver .gitmodules)
+# server/ contiene NUESTRO fork con el parche del límite de conexiones

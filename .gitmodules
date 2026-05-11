@@ -1,0 +1,24 @@
+[submodule "core"]
+	path = core
+	url = https://github.com/ONLYOFFICE/core.git
+[submodule "web-apps"]
+	path = web-apps
+	url = https://github.com/ONLYOFFICE/web-apps.git
+[submodule "sdkjs"]
+	path = sdkjs
+	url = https://github.com/ONLYOFFICE/sdkjs.git
+[submodule "dictionaries"]
+	path = dictionaries
+	url = https://github.com/ONLYOFFICE/dictionaries.git
+[submodule "core-fonts"]
+	path = core-fonts
+	url = https://github.com/ONLYOFFICE/core-fonts.git
+[submodule "document-templates"]
+	path = document-templates
+	url = https://github.com/ONLYOFFICE/document-templates.git
+[submodule "build_tools"]
+	path = build_tools
+	url = https://github.com/ONLYOFFICE/build_tools.git
+[submodule "Docker-DocumentServer"]
+	path = Docker-DocumentServer
+	url = https://github.com/ONLYOFFICE/Docker-DocumentServer.git
