@@ -273,17 +273,21 @@ button { font: inherit; cursor: pointer; border: 0; background: transparent; col
   white-space: pre-wrap;
 }
 
-/* Footer legal AGPL — visible en todo momento */
+/* Footer legal AGPL — discreto pero visible (cumple Sec 13) */
 .legal-footer {
-  padding: 6px 16px;
+  padding: 2px 12px;
   background: var(--c-panel);
   border-top: 1px solid var(--c-border);
-  font-size: 11px;
+  font-size: 9px;
+  line-height: 1.4;
   color: var(--c-text-muted);
-  text-align: center;
+  text-align: right;
+  opacity: 0.65;
+  transition: opacity .15s;
 }
+.legal-footer:hover { opacity: 1; }
 .legal-footer a {
-  color: var(--c-text-soft);
-  text-decoration: underline;
+  color: inherit;
+  text-decoration: none;
 }
-.legal-footer a:hover { color: var(--c-brand-dark); }
+.legal-footer a:hover { text-decoration: underline; }
