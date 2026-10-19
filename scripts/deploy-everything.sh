@@ -4,13 +4,11 @@
 # Ejecuta TODO en orden:
 #   1. apt update + paquetes base + docker + nginx + certbot + ufw
 #   2. crear /srv/onlyoffice/*
-#   3. clonar repos OnlyOffice (v9.3.1.11)
-#   4. verificar parche
-#   5. build de la imagen
-#   6. generar .env.prod con JWT_SECRET
-#   7. levantar stack
-#   8. configurar Nginx + emitir cert Let's Encrypt
-#   9. verificar end-to-end
+#   3. build de la imagen (oficial + branding)
+#   4. generar .env.prod con JWT_SECRET
+#   5. levantar stack
+#   6. configurar Nginx + emitir cert Let's Encrypt
+#   7. verificar end-to-end
 #
 # Uso (en la EC2, desde la raíz del fork descomprimido):
 #   sudo bash scripts/deploy-everything.sh editor.embitech.cloud admin@embitech.es
@@ -42,7 +40,7 @@ fi
 # 1. Paquetes base + Docker
 # =============================================================================
 echo ""
-echo "==> [1/9] Instalando paquetes base..."
+echo "==> [1/7] Instalando paquetes base..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get upgrade -yq
@@ -50,7 +48,7 @@ apt-get upgrade -yq
 apt-get install -yq \
     ca-certificates curl gnupg lsb-release git nginx certbot python3-certbot-nginx ufw
 
-echo "==> [2/9] Instalando Docker Engine..."
+echo "==> [2/7] Instalando Docker Engine..."
 if ! command -v docker >/dev/null 2>&1; then
     install -m 0755 -d /etc/apt/keyrings
     OS_ID=$(. /etc/os-release && echo "$ID")
@@ -72,7 +70,7 @@ fi
 # 2. Directorios persistentes + firewall
 # =============================================================================
 echo ""
-echo "==> [3/9] Creando /srv/onlyoffice/* y configurando ufw..."
+echo "==> [3/7] Creando /srv/onlyoffice/* y configurando ufw..."
 mkdir -p /srv/onlyoffice/{data,log,lib,db}
 chown -R 101:101 /srv/onlyoffice
 
@@ -81,47 +79,20 @@ ufw allow 'Nginx Full' >/dev/null
 ufw --force enable >/dev/null
 
 # =============================================================================
-# 3. Clonar repos OnlyOffice si faltan
+# 3. Build imagen
 # =============================================================================
 echo ""
-echo "==> [4/9] Verificando repos OnlyOffice..."
-TAG="v9.3.1.11"
-REPOS="core web-apps sdkjs dictionaries core-fonts document-templates build_tools Docker-DocumentServer"
-
-git config --global core.autocrlf input 2>/dev/null || true
-for r in $REPOS; do
-    if [ ! -d "$ROOT/$r/.git" ]; then
-        echo "    Cloning $r..."
-        git clone --depth 1 --branch "$TAG" "https://github.com/ONLYOFFICE/$r.git" "$ROOT/$r" &
-    fi
-done
-wait
-
-# Verificar server/ tiene el parche aplicado
-echo ""
-echo "==> [5/9] Verificando parche en server/Common/sources/constants.js..."
-if ! grep -qE '^exports\.LICENSE_CONNECTIONS\s*=\s*100;' "$ROOT/server/Common/sources/constants.js"; then
-    echo "ERROR: server/Common/sources/constants.js no tiene el parche aplicado."
-    echo "       Espero ver: exports.LICENSE_CONNECTIONS = 100;"
-    exit 1
-fi
-echo "    Parche LICENSE_CONNECTIONS=100 OK"
-
-# =============================================================================
-# 4. Build imagen
-# =============================================================================
-echo ""
-echo "==> [6/9] Build de onlyoffice-fork:local (10-20 min)..."
+echo "==> [4/7] Build de onlyoffice-fork:local (imagen oficial + branding)..."
 cd "$ROOT"
 docker buildx build --load -f docker/Dockerfile.full -t onlyoffice-fork:local .
 
 # =============================================================================
-# 5. .env.prod + up stack
+# 4. .env.prod + up stack
 # =============================================================================
 ENV_FILE="$ROOT/docker/.env.prod"
 if [ ! -f "$ENV_FILE" ]; then
     echo ""
-    echo "==> [7a/9] Generando .env.prod..."
+    echo "==> [5a/7] Generando .env.prod..."
     # Si JWT_SECRET viene en el entorno (ej. lo pasaste como `JWT_SECRET=... bash deploy-everything.sh ...`),
     # se respeta. Si no, se genera uno aleatorio.
     if [ -z "${JWT_SECRET:-}" ]; then
@@ -135,7 +106,7 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 
 echo ""
-echo "==> [7b/9] Levantando stack..."
+echo "==> [5b/7] Levantando stack..."
 docker compose -f "$ROOT/docker/docker-compose.prod.yml" --env-file "$ENV_FILE" up -d
 
 # Esperar healthy
@@ -153,13 +124,11 @@ if [ "$STATUS" != "healthy" ]; then
 fi
 echo "    Healthy"
 
-docker exec onlyoffice-ds supervisorctl start ds:example >/dev/null 2>&1 || true
-
 # =============================================================================
-# 6. Nginx + SSL
+# 5. Nginx + SSL
 # =============================================================================
 echo ""
-echo "==> [8/9] Configurando Nginx + Let's Encrypt para $DOMAIN..."
+echo "==> [6/7] Configurando Nginx + Let's Encrypt para $DOMAIN..."
 
 # Comprobar DNS
 PUB_IP=$(curl -fsS https://checkip.amazonaws.com || echo "?")
@@ -196,10 +165,10 @@ sed "s/docs\.embitech\.es/$DOMAIN/g" "$ROOT/docker/nginx-host.conf" \
 nginx -t && systemctl reload nginx
 
 # =============================================================================
-# 7. Verificación
+# 6. Verificación
 # =============================================================================
 echo ""
-echo "==> [9/9] Verificación end-to-end..."
+echo "==> [7/7] Verificación end-to-end..."
 sleep 3
 if curl -fsS "https://$DOMAIN/healthcheck" | grep -q "true"; then
     echo "    https://$DOMAIN/healthcheck → true ✓"

@@ -1,157 +1,73 @@
 # Despliegue en EC2
 
-Guía paso a paso para subir el fork de OnlyOffice a tu EC2 con dominio `editor.embitech.cloud` + SSL.
+El editor del CRM vive en `editor.embitech.cloud`.
 
-## Estado de partida (asumido)
+## Topología
 
-- EC2 corriendo, accesible por SSH.
-- Tu local: este repo con `server/` parcheado + branding aplicado.
-- Tu DNS: control sobre el dominio `embitech.es` para crear un A record.
-- Cert SSL: lo emite **Let's Encrypt** automáticamente con `certbot` durante el despliegue (gratis, renovación automática).
+- **EC2** con acceso por AWS Systems Manager (Session Manager, usuario `ssm-user`).
+- **Contenedor** `onlyoffice-ds` ([docker/docker-compose.prod.yml](docker/docker-compose.prod.yml)) escuchando solo en `127.0.0.1:8080`. Datos en `${DATA_ROOT:-/home/ssm-user/onlyoffice}/{data,logs,lib,db}`; `JWT_SECRET` en `docker/.env.prod` (no versionado; tiene que coincidir con `ONLYOFFICE_JWT_SECRET` del backend del CRM); `JWT_HEADER=Authorization`, `JWT_IN_BODY=true`.
+- **nginx del host** ([docker/nginx-host.conf](docker/nginx-host.conf)): termina TLS en 443, redirige 80 → 443, cabeceras de seguridad, `frame-ancestors` limitado al CRM, `/source` → repo público, `/example` bloqueado, proxy con WebSocket al contenedor.
 
-## Recursos creados
+## Actualizar el editor (caso habitual)
 
-- [docker/docker-compose.prod.yml](docker/docker-compose.prod.yml) — compose para EC2 (bind mounts a `/srv/onlyoffice`, sin `host.docker.internal`).
-- [docker/nginx-host.conf](docker/nginx-host.conf) — config Nginx host con TLS termination + WebSocket proxy.
-- [scripts/ec2-bootstrap.sh](scripts/ec2-bootstrap.sh) — instala docker, nginx, certbot, ufw en EC2 fresca.
-- [scripts/ec2-deploy.sh](scripts/ec2-deploy.sh) — clona repos OnlyOffice, build, up.
-
----
-
-## Paso 0 — DNS
-
-En tu proveedor de DNS (Route53, Cloudflare, etc.):
-```
-editor.embitech.cloud   A   <IP_PUBLICA_EC2>   TTL 300
-```
-Verifica con: `dig editor.embitech.cloud +short` (debe devolver tu IP EC2).
-
-## Paso 1 — Hacer llegar el código a la EC2
-
-**Recomendado: vía Git** — crea un repo privado (GitLab/GitHub/Bitbucket) con este proyecto y clónalo en EC2.
-
-Como alternativa rápida sin Git remoto, **archivo + scp**:
-
-```powershell
-# En tu Windows local — empaqueta SOLO lo que necesita la EC2
-# (server con parche, docker/, scripts/, patches/, DEPLOY.md, README.md)
-cd C:\Users\ignasi\Desktop\Onlyoffice
-$tmp = "C:\Users\ignasi\Desktop\onlyoffice-fork.tar.gz"
-tar --exclude='server/node_modules' --exclude='*/node_modules' -czf $tmp `
-    server docker scripts patches examples DEPLOY.md README.md .gitattributes .gitignore .dockerignore
-
-# Subir a EC2 (sustituye ubuntu@TU_IP y la ruta de tu key .pem)
-scp -i "C:\path\to\tu-key.pem" $tmp ubuntu@TU_IP:/home/ubuntu/
-```
-
-En la EC2:
-```bash
-mkdir -p ~/onlyoffice-fork && cd ~/onlyoffice-fork
-tar -xzf ~/onlyoffice-fork.tar.gz
-```
-
-## Paso 2 — Bootstrap de la EC2 (una sola vez)
+En Session Manager, en una hora sin nadie editando:
 
 ```bash
-# En la EC2, dentro de ~/onlyoffice-fork/
-chmod +x scripts/ec2-bootstrap.sh
-./scripts/ec2-bootstrap.sh editor.embitech.cloud
+cd <ruta del fork> && git pull && sudo ./scripts/ec2-deploy.sh
 ```
 
-Esto instala: docker + buildx + compose, nginx, certbot, ufw, y crea `/srv/onlyoffice/{data,log,lib,db}` con perms correctos.
+[scripts/ec2-deploy.sh](scripts/ec2-deploy.sh):
+1. Guarda la imagen en marcha como `onlyoffice-fork:anterior`.
+2. Compila `onlyoffice-fork:local` (imagen oficial + branding; un par de minutos).
+3. Ejecuta `documentserver-prepare4shutdown.sh` (unos 15 s): el editor guarda los documentos abiertos y manda los callbacks al CRM.
+4. Levanta el stack con la imagen nueva y espera `healthy`.
 
-**Después del bootstrap, cierra sesión SSH y vuelve a entrar** (para que el grupo `docker` haga efecto en tu usuario).
+Volver atrás:
+```bash
+docker tag onlyoffice-fork:anterior onlyoffice-fork:local
+docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod up -d
+```
 
-## Paso 3 — Deploy del stack OnlyOffice
+Después: abrir un documento en el CRM, editar, guardar y cerrar; y revisar en S3 que no haya ficheros nuevos en `.../despachos/<id>/onlyoffice/recuperados/` (guardados de sesiones que el CRM aparta para no pisar el documento).
+
+## nginx del host
 
 ```bash
-cd ~/onlyoffice-fork
-chmod +x scripts/ec2-deploy.sh
-./scripts/ec2-deploy.sh
+sudo ./scripts/apply-nginx-host.sh
 ```
 
-Esto:
-1. Clona los repos OnlyOffice que faltan (`core`, `web-apps`, `sdkjs`, etc. en `v9.3.1.11`).
-2. Build de la imagen `onlyoffice-fork:local` (10-20 min la primera vez).
-3. Genera `docker/.env.prod` con `JWT_SECRET` aleatorio.
-4. Levanta el contenedor con `docker-compose.prod.yml`.
-5. Espera `healthy`.
+Copia `/etc/nginx` a `/root/nginx-backup-<fecha>`, desactiva cualquier otro sitio del dominio, instala la configuración, valida con `nginx -t`, recarga y prueba por HTTPS. Si algo falla, restaura la copia sola. nginx 1.24 (Ubuntu 24.04) solo admite `http2` como parámetro de `listen`.
 
-Verificación manual:
-```bash
-curl -fsS http://127.0.0.1:8080/healthcheck   # → true
-```
+## EC2 nueva desde cero
 
-## Paso 4 — Nginx + SSL
+1. DNS: `editor.embitech.cloud A <IP_PUBLICA_EC2>`.
+2. En la EC2, desde la raíz del fork: `sudo bash scripts/deploy-everything.sh editor.embitech.cloud <email>` (paquetes, Docker, nginx, certbot, ufw, build, `.env.prod`, stack, nginx + certificado). Si el CRM ya tiene un `ONLYOFFICE_JWT_SECRET`, pásalo como `JWT_SECRET=... sudo -E bash scripts/deploy-everything.sh ...`.
 
-```bash
-# Copiar config Nginx
-sudo cp docker/nginx-host.conf /etc/nginx/sites-available/onlyoffice
-sudo ln -sf /etc/nginx/sites-available/onlyoffice /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
+## Certificado
 
-# Crear directorio para ACME challenge
-sudo mkdir -p /var/www/certbot
-
-# Test config (aún sin cert, dará error en ssl_certificate — normal)
-# Edita temporalmente el bloque 443 para comentarlo o usa el comando standalone:
-
-# Emitir cert con Let's Encrypt (modo nginx; certbot inyecta config temporal)
-sudo certbot --nginx -d editor.embitech.cloud \
-    --non-interactive --agree-tos \
-    -m tu-email@embitech.es
-
-# Restaurar nginx-host.conf y recargar
-sudo cp docker/nginx-host.conf /etc/nginx/sites-available/onlyoffice
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-Verificar:
-```bash
-curl -fsS https://editor.embitech.cloud/healthcheck   # → true
-curl -I https://editor.embitech.cloud/web-apps/apps/api/documents/api.js   # → HTTP/2 200
-```
-
-## Paso 5 — Actualizar el CRM/stub
-
-En tu CRM (o en el stub `examples/crm-mock/`) cambiar:
-```env
-PUBLIC_HOST=editor.embitech.cloud        # antes: host.docker.internal:3000
-```
-Y los URLs del DocsAPI deben apuntar a:
-```js
-const DS_BASE = "https://editor.embitech.cloud";
-```
-
-El `callbackUrl` y `document.url` del config deben usar URLs **públicas** y **HTTPS** accesibles desde la EC2.
+El certificado actual se emitió con validación DNS manual: `certbot renew` no lo renueva solo y hay que hacerlo a mano antes de que caduque (cada 90 días). Tras renovarlo, `sudo nginx -t && sudo systemctl reload nginx`. Síntoma de certificado caducado: el editor sale en blanco en el CRM. Comprobar la fecha: `openssl s_client -connect editor.embitech.cloud:443 </dev/null | openssl x509 -noout -enddate`.
 
 ## Operación
 
 | Acción | Comando |
 |---|---|
-| Ver estado del stack | `docker compose -f docker/docker-compose.prod.yml ps` |
-| Logs del DocumentServer | `docker logs -f onlyoffice-ds` |
-| Reiniciar | `docker compose -f docker/docker-compose.prod.yml restart` |
-| Actualizar imagen tras patch | `./scripts/ec2-deploy.sh` (rebuild incremental) |
-| Backup datos | `sudo tar -czf onlyoffice-backup-$(date +%F).tar.gz /srv/onlyoffice/data /srv/onlyoffice/db` |
-| Renovar cert (cron lo hace solo) | `sudo certbot renew --dry-run` |
+| Estado del stack | `docker compose -f docker/docker-compose.prod.yml ps` |
+| Logs del editor | `docker logs -f onlyoffice-ds` |
+| Reiniciar (guarda antes los documentos abiertos) | `docker compose -f docker/docker-compose.prod.yml restart` |
+| Actualizar a otra versión | ver README, «Actualizar a otra versión de OnlyOffice» |
+| Backup de datos | `sudo tar -czf onlyoffice-backup-$(date +%F).tar.gz /home/ssm-user/onlyoffice/data /home/ssm-user/onlyoffice/db` |
 
 ## Troubleshooting
 
 | Síntoma | Causa probable / fix |
 |---|---|
-| `curl /healthcheck` falla con 502 | El contenedor no está healthy. `docker logs onlyoffice-ds`. |
-| Nginx 502 Bad Gateway | El contenedor escucha en 127.0.0.1:8080. Verifica con `docker ps`. |
-| Editor carga pero "Download failed" | El `document.url` del callback no es accesible desde el contenedor. Tiene que ser HTTPS público. |
-| Mixed-content warnings | El CRM (HTTPS) embebe assets HTTP. El editor DEBE servirse por HTTPS (paso 4). |
-| Cert SSL no renueva | `sudo certbot renew --dry-run` para diagnosticar. |
-| `docker buildx build` agota memoria | EC2 muy pequeña. Necesitas ≥4 GB RAM durante build. Considera t3.large o ampliar swap. |
+| `curl /healthcheck` falla con 502 | El contenedor no está healthy: `docker logs onlyoffice-ds`. |
+| Editor en blanco en el CRM | Certificado caducado (ver arriba) o `JWT_SECRET` distinto del `ONLYOFFICE_JWT_SECRET` del CRM. |
+| Editor carga pero «Download failed» | El `document.url` que manda el CRM no es accesible desde el contenedor: tiene que ser HTTPS público. |
+| El build falla en el branding | Una versión nueva de OnlyOffice movió un fichero o un estilo: el mensaje `BRANDING:` dice cuál; ajustar `docker/branding/apply-branding.sh`. |
 
-## TODO pendientes (NO bloqueantes)
+## Pendiente
 
-- [ ] Subir el fork a repo público (compliance AGPL v3).
-- [ ] Configurar backups automáticos (cron + S3).
-- [ ] Spell-check server-side (opcional, el cliente ya corrige).
-- [ ] Rate limiting en Nginx.
+- [ ] Backups automáticos (cron + S3).
+- [ ] Rate limiting en nginx.
 - [ ] Monitorización (CloudWatch o similar).

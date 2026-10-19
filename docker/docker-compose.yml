@@ -11,7 +11,7 @@ services:
     environment:
       JWT_ENABLED: "true"
       JWT_SECRET: "${JWT_SECRET}"
-      JWT_HEADER: "AuthorizationJwt"
+      JWT_HEADER: "Authorization"
       JWT_IN_BODY: "true"
       USE_UNAUTHORIZED_STORAGE: "false"
     volumes:
