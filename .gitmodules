@@ -22,3 +22,6 @@
 [submodule "Docker-DocumentServer"]
 	path = Docker-DocumentServer
 	url = https://github.com/ONLYOFFICE/Docker-DocumentServer.git
+[submodule "server"]
+	path = server
+	url = https://github.com/ONLYOFFICE/server.git
